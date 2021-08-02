@@ -1,0 +1,13 @@
+[project]
+requires-pytyhon = ">=3.6"
+
+[build-system]
+requires = ["setuptools>=42", "wheel", "torch>=1.9.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.cibuildwheel]
+build-verbosity = 10
+test-requires = "pytest"
+test-command = "pytest --pyargs logdecomp"
+
+
