@@ -67,7 +67,7 @@ setup(name='logdecomp',
       version=__version__,
       author="Vlad Niculae",
       ext_modules=extensions,
-      install_requires=["torch>=1.9.0"],
+      install_requires=["torch>=1.9.0", "numpy"],
       packages=['logdecomp'],
       cmdclass={'build_ext': cpp_extension.BuildExtension},
       zip_safe=False

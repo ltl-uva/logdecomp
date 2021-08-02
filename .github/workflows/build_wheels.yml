@@ -9,13 +9,13 @@ on:
 
 jobs:
   build_linux_wheels:
-    name: Build ubuntu wheels
+    name: Build linux wheels
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-20.04]
-        cibw_python: ["cp38-*"]
+        cibw_python: ["cp38-*", "cp39-*"]
         cibw_manylinux: ["manylinux2014"]
 
     steps:
