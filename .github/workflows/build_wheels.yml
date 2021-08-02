@@ -16,7 +16,7 @@ jobs:
       matrix:
         os: [ubuntu-20.04]
         cibw_python: ["cp38-*"]
-        cibw_manylinux: ["manylinux2010"]
+        cibw_manylinux: ["manylinux2014"]
 
     steps:
       - uses: actions/checkout@v2
