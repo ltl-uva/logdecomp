@@ -25,6 +25,7 @@ jobs:
         uses: pypa/cibuildwheel@v2.0.1
         env:
             CIBW_BUILD: ${{ matrix.cibw_python }}
+            CIBW_REPAIR_WHEEL_COMMAND: "true"
             CIBW_BEFORE_BUILD: yum install eigen3-devel -y
             CIBW_ARCHS_LINUX: auto 
             CIBW_MANYLINUX_X86_64_IMAGE: ${{ matrix.cibw_manylinux }}
