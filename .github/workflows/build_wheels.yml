@@ -26,7 +26,7 @@ jobs:
         env:
             CIBW_BUILD: ${{ matrix.cibw_python }}
             CIBW_BEFORE_BUILD: yum install eigen3-devel -y
-            CIBW_REPAIR_WHEEL_COMMAND: python build_tools/auditwheel_exclude_torch.py {dest_dir} {wheel}
+            CIBW_REPAIR_WHEEL_COMMAND: bash build_tools/audit_wheel.sh {dest_dir} {wheel}
             CIBW_ARCHS_LINUX: auto 
             CIBW_MANYLINUX_X86_64_IMAGE: ${{ matrix.cibw_manylinux }}
 
