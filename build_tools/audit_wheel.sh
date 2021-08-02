@@ -1,4 +1,5 @@
-pip install wheelhouse && python build_tools/auditwheel_exclude_torch.py repair -w $1 $2
+python -m pip install auditwheel
+python build_tools/auditwheel_exclude_torch.py repair -w $1 $2
 
 # this was the code that lead to bundling torch libs, doesn't run
 ## set -x
