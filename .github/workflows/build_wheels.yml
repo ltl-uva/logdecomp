@@ -15,7 +15,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-20.04]
-        cibw_python: ["cp38-*"]
+        cibw_python: ["cp38-*", "cp39-*"]
         cibw_manylinux: ["manylinux2014"]
 
     steps:
@@ -27,7 +27,7 @@ jobs:
             CIBW_BUILD: ${{ matrix.cibw_python }}
             CIBW_BEFORE_BUILD: yum install eigen3-devel -y
             CIBW_REPAIR_WHEEL_COMMAND: bash build_tools/audit_wheel.sh {dest_dir} {wheel}
-            CIBW_ARCHS_LINUX: auto 
+            CIBW_ARCHS_LINUX: auto64 
             CIBW_MANYLINUX_X86_64_IMAGE: ${{ matrix.cibw_manylinux }}
 
       - uses: actions/upload-artifact@v2
