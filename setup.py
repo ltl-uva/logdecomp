@@ -58,8 +58,8 @@ extensions = [
     cpp_extension.CppExtension('logdecomp.lu',
               ["logdecomp/lu.cpp"],
               language='c++',
+              include_dirs=[find_eigen()],
               extra_compile_args=['-std=c++17'],
-              # extra_link_args=[],
     ),
 ]
 
