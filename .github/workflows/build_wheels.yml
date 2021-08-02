@@ -27,7 +27,7 @@ jobs:
             CIBW_BUILD: ${{ matrix.cibw_python }}
             CIBW_BEFORE_BUILD: apt install -y libeigen3-dev
             CIBW_ARCHS_LINUX: auto 
-            CIBW_MANYLINUX_X86_64_IMAGE: ${{ matrix.cibw_manylinux }}$
+            CIBW_MANYLINUX_X86_64_IMAGE: ${{ matrix.cibw_manylinux }}
 
       - uses: actions/upload-artifact@v2
         with:
