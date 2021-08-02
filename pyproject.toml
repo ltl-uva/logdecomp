@@ -9,5 +9,3 @@ build-backend = "setuptools.build_meta"
 build-verbosity = 10
 test-requires = "pytest"
 test-command = "pytest --pyargs logdecomp"
-
-

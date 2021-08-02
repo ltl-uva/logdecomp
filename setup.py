@@ -68,6 +68,7 @@ setup(name='logdecomp',
       author="Vlad Niculae",
       ext_modules=extensions,
       setup_requires=['pybind11>=2.5.0'],
+      packages=['logdecomp'],
       cmdclass={'build_ext': cpp_extension.BuildExtension},
       zip_safe=False
 )
