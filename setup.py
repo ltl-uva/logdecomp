@@ -55,10 +55,10 @@ def find_eigen():
 
 
 extensions = [
-    cpp_extension.CppExtension('logdecomp.lu',
+    setuptools.Extension('logdecomp.lu',
               ["logdecomp/lu.cpp"],
               language='c++',
-              include_dirs=[find_eigen()],
+              include_dirs=cpp_extension.include_paths() + [find_eigen()],
               extra_compile_args=['-std=c++17'],
     ),
 ]
