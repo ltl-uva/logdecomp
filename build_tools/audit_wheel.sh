@@ -1,10 +1,7 @@
-set -x
-which pip
-pip install wheelhouse
-pwd
-python build_tools/auditwheel_exclude_torch.py repair -w $1 $2
+pip install wheelhouse && python build_tools/auditwheel_exclude_torch.py repair -w $1 $2
 
 # this was the code that lead to bundling torch libs, doesn't run
+## set -x
 ## pip install torch>=1.9.0
 ## LP=`python -c "from torch.utils.cpp_extension import library_paths as lp; print(':'.join(lp()))"`
 ## export LD_LIBRARY_PATH=$LP
