@@ -30,6 +30,7 @@ def find_eigen():
         "/usr/include/eigen3",
         "/usr/include/local",
         "/usr/include",
+        "C:\ProgramData\chocolatey\lib\eigen\include"
     ]
 
     # Loop over search paths and check for the existence of the Eigen/Dense
