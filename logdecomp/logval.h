@@ -146,6 +146,10 @@ public:
     if (s_) return -std::exp(v_); else return std::exp(v_);
   }
 
+  operator T() const {
+    return as_float();
+  }
+
   bool s_;
   T v_;
 
