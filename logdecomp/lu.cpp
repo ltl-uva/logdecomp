@@ -38,7 +38,7 @@ class log_domain_lu { public:
 
     auto inv() {
         Eigen::MatrixXlogd Xinv = lu.inverse();
-        Eigen::MatrixXf Xinvf = Xinv.cast<float>();
+        Eigen::MatrixXf Xinvf = Xinv.cast<double>().cast<float>();
         return Xinvf;
     }
 
@@ -94,10 +94,11 @@ public:
         for (int k = 0; k < batch_size; ++k) {
             auto dk = lengths[k];
             Eigen::MatrixXlogd Xinv = lus[k].inverse();
-            auto Xinvf = Xinv.cast<float>();
+            auto Xinvf = Xinv.cast<double>();
             for (int i = 0; i < dk; ++i) {
                 for (int j = 0; j < dk; ++j) {
-                    res_acc(k, i, j) = Xinvf(i, j);
+                    double x = Xinvf(i, j);
+                    res_acc(k, i, j) = (float) x;
                 }
             }
         }
