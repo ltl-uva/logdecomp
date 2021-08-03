@@ -169,12 +169,12 @@ LogVal<T> operator*(LogVal<T> o1, const LogVal<T>& o2) {
 }
 
 // added by vlad
-template<class T>
-LogVal<T> operator*(LogVal<T> o1, const long int& o2) {
-  LogVal<T> o2log = LogVal<T>(double(o2));
-  o1 *= o2log;
-  return o1;
-}
+// template<class T>
+// LogVal<T> operator*(LogVal<T> o1, const long int& o2) {
+//   LogVal<T> o2log = LogVal<T>(double(o2));
+//   o1 *= o2log;
+//   return o1;
+// }
 
 template<class T>
 LogVal<T> operator/(LogVal<T> o1, const LogVal<T>& o2) {
