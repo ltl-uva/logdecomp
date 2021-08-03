@@ -5,7 +5,7 @@ from setuptools import setup
 import sys
 import setuptools
 
-from pybind11.setup_helpers import Pybind11Extension, build_ext
+from pybind11.setup_helpers import Pybind11Extension, WIN
 
 
 __version__ = '0.1'
@@ -55,10 +55,14 @@ def find_eigen():
     return None
 
 
+CPP_VER = '/std:c++17' if WIN else '-std=c++17'
+
+
 extensions = [
     Pybind11Extension('logdecomp.lu',
                       ["logdecomp/lu.cpp"],
                       include_dirs=[find_eigen()],
+                      extra_compile_args=[CPP_VER]
     )
 ]
 
@@ -68,7 +72,6 @@ setup(name='logdecomp',
       author="Vlad Niculae",
       ext_modules=extensions,
       install_requires=["torch>=1.9.0", "numpy"],
-      cmdclass={"build_ext": build_ext},
       packages=['logdecomp'],
       setup_requires=['pybind11>=2.5.0'],
       zip_safe=False
