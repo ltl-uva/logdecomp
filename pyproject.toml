@@ -1,0 +1,11 @@
+[project]
+requires-python = ">=3.6"
+
+[build-system]
+requires = ["pip", "pybind11>=2.5.0", "setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.cibuildwheel]
+build-verbosity = 10
+test-requires = "pytest"
+test-command = "pytest --pyargs logdecomp"
