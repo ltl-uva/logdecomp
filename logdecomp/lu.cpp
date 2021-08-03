@@ -17,10 +17,18 @@ namespace Eigen {
 }
 
 
+Eigen::MatrixXlogd to_log(const Eigen::MatrixXf& X) {
+    Eigen::MatrixXlogd res(X.rows(), X.cols());
+    for (py::ssize_t i = 0; i < X.rows(); ++i) {
+        for (py::ssize_t j = 0; j < X.cols(); ++j) {
+            res(i, j) = LogValD((double) X(i, j), false);
+        }
+    }
+    return res;
+}
+
 class log_domain_lu { public:
-    log_domain_lu(const Eigen::MatrixXf& X)
-    : lu(X.unaryExpr([] (const float& f) { return LogValD((double) f, false); }))
-    { }
+    log_domain_lu(const Eigen::MatrixXf& X): lu(to_log(X)) { }
 
     float logdet() {
         return (float) lu.determinant().logabs();
@@ -28,7 +36,7 @@ class log_domain_lu { public:
 
     auto inv() {
         Eigen::MatrixXlogd Xinv = lu.inverse();
-        Eigen::MatrixXf Xinvf = Xinv.cast<double>().cast<float>();
+        Eigen::MatrixXf Xinvf = Xinv.cast<float>();
         return Xinvf;
     }
 
@@ -66,7 +74,7 @@ public:
         auto res = py::array_t<float>({ batch_size });
         auto res_acc = res.mutable_unchecked<1>();
 
-        for (int k = 0; k < batch_size; ++k) {
+        for (py::ssize_t k = 0; k < batch_size; ++k) {
             res_acc(k) = (float) lus[k].determinant().logabs();
         }
 
@@ -84,9 +92,10 @@ public:
         for (int k = 0; k < batch_size; ++k) {
             auto dk = lengths[k];
             Eigen::MatrixXlogd Xinv = lus[k].inverse();
+            auto Xinvf = Xinv.cast<float>();
             for (int i = 0; i < dk; ++i) {
                 for (int j = 0; j < dk; ++j) {
-                    res_acc(k, i, j) = (float) Xinv(i, j).as_float();
+                    res_acc(k, i, j) = Xinvf(i, j);
                 }
             }
         }
