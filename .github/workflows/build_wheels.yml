@@ -24,7 +24,8 @@ jobs:
           uses: pypa/cibuildwheel@v2.0.1
           env:
               CIBW_BUILD: ${{ matrix.cibw_python }}
-              CIBW_BEFORE_BUILD: choco install --no-progress -y eigen
+              CIBW_BEFORE_BUILD: python3 build_tools/fetch_eigen.py
+              EIGEN_DIR: eigen/eigen-3.3.9/
 
         - uses: actions/upload-artifact@v2
           with:
