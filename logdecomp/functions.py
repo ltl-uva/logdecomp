@@ -10,13 +10,15 @@ class LogDetExp(torch.autograd.Function):
         ctx.save_for_backward(X.detach())
         ctx.lu = LogDomainLU(X)
         z = ctx.lu.logdet()
-        return X.new_tensor(z)
+        return X.new_tensor(z)  # just a scalar, we're ok with a copy here.
 
     @classmethod
     def backward(cls, ctx, dz):
         X, = ctx.saved_tensors
-        inv = dz.new_tensor(ctx.lu.inv())
-        return inv.T * torch.exp(X) * dz
+        Y_np = ctx.lu.inv()
+        Y = (torch.from_numpy(Y)
+                  .to(dtype=X.dtype, device=X.device))
+        return Y.T * torch.exp(X) * dz
 
 
 class BatchLogDetExp(torch.autograd.Function):
@@ -25,23 +27,29 @@ class BatchLogDetExp(torch.autograd.Function):
     def forward(cls, ctx, X, lengths):
         ctx.save_for_backward(X.detach())
         ctx.lu = BatchLogDomainLU(X, lengths)
-        z = ctx.lu.logdet()
-        return z
+        logdet_np = ctx.lu.logdet()
+        logdet = (torch.from_numpy(logdet_np)
+                       .to(dtype=X.dtype, device=X.device))
+        return logdet
 
     @classmethod
     def backward(cls, ctx, dz):
         # dz is a vector
-        inv = ctx.lu.inv()
         X, = ctx.saved_tensors
-        invt = inv.transpose(-2, -1)
+        Y_np = ctx.lu.inv()
+        Y = (torch.from_numpy(Y_np)
+                  .to(dtype=X.dtype, device=X.device))
+        Yt = Y.transpose(-2, -1)
         dzu = dz.unsqueeze(-1).unsqueeze(-1)
-        return invt * torch.exp(X) * dzu, None
+        return Yt * torch.exp(X) * dzu, None
 
 
 class InvExp(torch.autograd.Function):
     @classmethod
     def forward(cls, ctx, X):
-        Y = X.new_tensor(LogDomainLU(X).inv())
+        Y_np = LogDomainLU(X).inv()
+        Y = (torch.from_numpy(Y_np)
+                  .to(dtype=X.dtype, device=X.device))
         ctx.save_for_backward(X.detach(), Y)
         return Y
 
@@ -54,7 +62,9 @@ class InvExp(torch.autograd.Function):
 class BatchInvExp(torch.autograd.Function):
     @classmethod
     def forward(cls, ctx, X, lengths):
-        Y = BatchLogDomainLU(X, lengths).inv()
+        Y_np = BatchLogDomainLU(X, lengths).inv()
+        Y = (torch.from_numpy(Y_np)
+                  .to(dtype=X.dtype, device=X.device))
         ctx.save_for_backward(X.detach(), Y)
         return Y
 

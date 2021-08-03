@@ -1,51 +1,42 @@
-#include <torch/extension.h>
+#include <pybind11/stl.h>
+#include <pybind11/pybind11.h>
 #include <pybind11/eigen.h>
+#include <pybind11/numpy.h>
+
 #include <Eigen/Dense>
 
 #include "logval.h"
 
-using namespace torch::indexing;
 namespace py = pybind11;
+
 
 typedef LogVal<double> LogValD;
 namespace Eigen {
     typedef Eigen::Matrix<LogValD, Dynamic, Dynamic> MatrixXlogd;
-    typedef Eigen::Matrix<LogValD, Dynamic, 1> VectorXlogd;
-    typedef Eigen::Matrix<double, Dynamic, 1> VectorXd;
-    typedef Eigen::Matrix<double, Dynamic, Dynamic> MatrixXd;
+    typedef Eigen::Matrix<float, Dynamic, Dynamic> MatrixXf;
 }
 
 
-auto torch_to_eigen_log(torch::Tensor X)
-{
-    TORCH_CHECK(X.size(0) == X.size(1), "X must be square");
+template <typename T>
+auto to_log(const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>& in) {
+    return in.unaryExpr([](const T& f) { return LogValD((double) f, false); });
+}
 
-    auto d = X.size(0);
-    torch::TensorAccessor<float, 2> X_acc{X.accessor<float, 2>()};
-    Eigen::MatrixXlogd eigX(d, d);
-
-    for (int i = 0; i < d; ++i)
-        for (int j = 0; j < d; ++j)
-            eigX(i, j) = LogValD((double) X_acc[i][j], false);
-
-    return eigX;
+template <typename T>
+Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> from_log(const Eigen::MatrixXlogd& in) {
+    return in.unaryExpr([](const LogValD& lv) { return (T) lv.as_float(); });
 }
 
 
-class log_domain_lu {
-public:
-    log_domain_lu(torch::Tensor X): lu(torch_to_eigen_log(X)) { }
+class log_domain_lu { public:
+    log_domain_lu(const Eigen::MatrixXf& X): lu(to_log(X)) { }
 
     float logdet() {
         return lu.determinant().logabs();
     }
 
     auto inv() {
-        Eigen::MatrixXlogd Xinv = lu.inverse();
-        Eigen::MatrixXd Xinvd = Xinv.unaryExpr([](const LogValD& lv) {
-            return lv.as_float();
-        });
-        return Xinvd;
+        Eigen::MatrixXlogd Xinv = lu.inverse(); return from_log<float> (Xinv);
     }
 
 private:
@@ -55,39 +46,54 @@ private:
 
 class batch_log_domain_lu {
 public:
-    batch_log_domain_lu(torch::Tensor X, std::vector<int> lengths)
-    : lengths{lengths}
-    , shape{X.sizes()} {
+    batch_log_domain_lu(
+        const py::array_t<float>& X,
+        const std::vector<int>& lengths)
+    : lengths{ lengths }
+    {
+        auto X_acc = X.unchecked<3>();
 
-        for (int k = 0; k < lengths.size(); ++k) {
-            auto slice = Slice(0, lengths[k]);
-            auto Xk = X.index({k, slice, slice});
-            lus.emplace_back(torch_to_eigen_log(Xk));
+        batch_size = X_acc.shape(0);
+        dim1 = X_acc.shape(1);
+        dim2 = X_acc.shape(2);
+
+        for (py::ssize_t k = 0; k < batch_size; ++k) {
+            auto dk = lengths[k];
+            Eigen::MatrixXlogd Xk(dk, dk);
+            for (py::ssize_t i = 0; i < dk; ++i) {
+                for (py::ssize_t j = 0; j < dk; ++j) {
+                    Xk(i, j) = LogValD((double) X_acc(k, i, j), false);
+                }
+            }
+            lus.emplace_back(Xk);
         }
-
     }
 
-    at::Tensor logdet() {
-        auto res = at::empty({lengths.size()}); // CPU float;
-        auto res_acc = res.accessor<float, 1>();
-        for (int k = 0; k < lengths.size(); ++k) {
-            res_acc[k] = lus[k].determinant().logabs();
+    py::array_t<float> logdet() {
+        auto res = py::array_t<float>({ batch_size });
+        auto res_acc = res.mutable_unchecked<1>();
+
+        for (int k = 0; k < batch_size; ++k) {
+            res_acc(k) = lus[k].determinant().logabs();
         }
+
         return res;
     }
 
-    auto inv() {
-        auto res = at::zeros(shape);
-        auto res_acc = res.accessor<float, 3>();
+    py::array_t<float> inv(bool zero_pad) {
+        auto res = py::array_t<float>({ batch_size, dim1, dim2 });
 
-        for (int k = 0; k < lengths.size(); ++k) {
+        if (zero_pad) {
+            std::fill(res.mutable_data(), res.mutable_data() + res.size(), float{});
+        }
 
+        auto res_acc = res.mutable_unchecked<3>();
+        for (int k = 0; k < batch_size; ++k) {
+            auto dk = lengths[k];
             Eigen::MatrixXlogd Xinv = lus[k].inverse();
-
-            // TODO: possible / worth it to avoid for loop?
-            for (int i = 0; i < lengths[k]; ++i) {
-                for (int j = 0; j < lengths[k]; ++j) {
-                    res_acc[k][i][j] = Xinv(i, j).as_float();
+            for (int i = 0; i < dk; ++i) {
+                for (int j = 0; j < dk; ++j) {
+                    res_acc(k, i, j) = Xinv(i, j).as_float();
                 }
             }
         }
@@ -98,20 +104,31 @@ public:
 private:
     std::vector<Eigen::FullPivLU<Eigen::MatrixXlogd>> lus;
     std::vector<int> lengths;
-    at::IntArrayRef shape;
+    py::ssize_t batch_size;
+    py::ssize_t dim1;
+    py::ssize_t dim2;
 };
 
-PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
 
-    py::class_<batch_log_domain_lu>(m, "BatchLogDomainLU")
-        .def(py::init<torch::Tensor, std::vector<int>>())
-        .def("logdet", &batch_log_domain_lu::logdet)
-        .def("inv", &batch_log_domain_lu::inv);
+PYBIND11_MODULE(lu, m) {
 
     py::class_<log_domain_lu>(m, "LogDomainLU")
-        .def(py::init<torch::Tensor>())
-        .def("logdet", &log_domain_lu::logdet)
-        .def("inv", &log_domain_lu::inv);
+        .def(py::init<const Eigen::MatrixXf&>())
+        .def("logdet",
+             &log_domain_lu::logdet)
+        .def("inv",
+             &log_domain_lu::inv);
+
+    py::class_<batch_log_domain_lu>(m, "BatchLogDomainLU")
+        .def(py::init<py::array_t<float>, std::vector<int>>())
+        .def("logdet",
+             &batch_log_domain_lu::logdet,
+             py::return_value_policy::move)
+        .def("inv",
+             &batch_log_domain_lu::inv,
+             py::arg("zero_pad") = true,
+             py::return_value_policy::move);
+
 
 #ifdef VERSION_INFO
     m.attr("__version__") = VERSION_INFO;
