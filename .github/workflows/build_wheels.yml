@@ -8,15 +8,14 @@ on:
 
 
 jobs:
-  build_wheels:
-    name: Build linux wheels
+  build_macos_wheels:
+    name: Build macos wheels
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-20.04, macos-10.15, windows-2019]
+        os: [macos-10.15]
         cibw_python: ["cp38-*", "cp39-*"]
-        cibw_manylinux: ["manylinux2014"]
 
     steps:
       - uses: actions/checkout@v2
@@ -24,13 +23,38 @@ jobs:
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.0.1
         env:
-            MACOS_DEPLOYMENT_TARGET: 10.14
             CIBW_BUILD: ${{ matrix.cibw_python }}
-            CIBW_BEFORE_BUILD: yum install eigen3-devel -y
-            CIBW_ARCHS_LINUX: auto64 
-            CIBW_MANYLINUX_X86_64_IMAGE: ${{ matrix.cibw_manylinux }}
+            CIBW_ARCHS_MACOS: x86_64 arm64
+            MACOS_DEPLOYMENT_TARGET: 10.14
+            HOMEBREW_NO_INSTALL_CLEANUP: 1
+            CIBW_BEFORE_BUILD: brew install eigen
 
       - uses: actions/upload-artifact@v2
         with:
           name: wheels
           path: ./wheelhouse/*.whl
+    #   build_linux_wheels:
+    #     name: Build linux wheels
+    #     runs-on: ${{ matrix.os }}
+    #     strategy:
+    #       fail-fast: false
+    #       matrix:
+    #         os: [ubuntu-20.04]
+    #         cibw_python: ["cp38-*", "cp39-*"]
+    #         cibw_manylinux: ["manylinux2014"]
+    # 
+    #     steps:
+    #       - uses: actions/checkout@v2
+    # 
+    #       - name: Build wheels
+    #         uses: pypa/cibuildwheel@v2.0.1
+    #         env:
+    #             CIBW_BUILD: ${{ matrix.cibw_python }}
+    #             CIBW_BEFORE_BUILD: yum install eigen3-devel -y
+    #             CIBW_ARCHS_LINUX: auto64 
+    #             CIBW_MANYLINUX_X86_64_IMAGE: ${{ matrix.cibw_manylinux }}
+    # 
+    #       - uses: actions/upload-artifact@v2
+    #         with:
+    #           name: wheels
+    #           path: ./wheelhouse/*.whl
