@@ -32,7 +32,7 @@ public:
   typedef LogVal<T> Self;
 
   LogVal() : s_(), v_(LOGVAL_LOG0) {}
-  LogVal(double x) : s_(std::signbit(x)), v_(s_ ? std::log(-x) : std::log(x)) {}
+  explicit LogVal(double x) : s_(std::signbit(x)), v_(s_ ? std::log(-x) : std::log(x)) {}
   const Self& operator=(double x) { s_ = std::signbit(x); v_ = s_ ? std::log(-x) : std::log(x); return *this; }
   LogVal(double lnx, bool sign) : s_(sign), v_(lnx) {}
   static Self exp(T lnx) { return Self(lnx, false); }
