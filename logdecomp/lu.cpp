@@ -28,7 +28,8 @@ class log_domain_lu { public:
 
     auto inv() {
         Eigen::MatrixXlogd Xinv = lu.inverse();
-        Eigen::MatrixXf Xinvf = Xinv.unaryExpr([](const LogValD& lv) { return (float) lv.as_float(); });
+        Eigen::MatrixXf Xinvf = Xinv.unaryExpr([](const LogValD& lv) { return lv.as_float(); })
+                                    .cast<float>();
         return Xinvf;
     }
 
