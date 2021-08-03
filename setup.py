@@ -5,7 +5,7 @@ from setuptools import setup
 import sys
 import setuptools
 
-from torch.utils import cpp_extension
+from pybind11.setup_helpers import Pybind11Extension
 
 
 __version__ = '0.1'
@@ -55,13 +55,13 @@ def find_eigen():
 
 
 extensions = [
-    cpp_extension.CppExtension('logdecomp.lu',
-              ["logdecomp/lu.cpp"],
-              language='c++',
-              include_dirs=[find_eigen()],
-              extra_compile_args=['-std=c++17'],
-    ),
+    Pybind11Extension('logdecomp.lu',
+                      ["logdecomp/lu.cpp"],
+                      include_dirs=[find_eigen()],
+                      extra_compile_args=['-std=c++17'],
+    )
 ]
+
 
 setup(name='logdecomp',
       version=__version__,
@@ -69,6 +69,5 @@ setup(name='logdecomp',
       ext_modules=extensions,
       install_requires=["torch>=1.9.0", "numpy"],
       packages=['logdecomp'],
-      cmdclass={'build_ext': cpp_extension.BuildExtension},
       zip_safe=False
 )
