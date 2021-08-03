@@ -17,26 +17,19 @@ namespace Eigen {
 }
 
 
-template <typename T>
-auto to_log(const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>& in) {
-    return in.unaryExpr([](const T& f) { return LogValD((double) f, false); });
-}
-
-template <typename T>
-Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> from_log(const Eigen::MatrixXlogd& in) {
-    return in.unaryExpr([](const LogValD& lv) { return (T) lv.as_float(); });
-}
-
-
 class log_domain_lu { public:
-    log_domain_lu(const Eigen::MatrixXf& X): lu(to_log(X)) { }
+    log_domain_lu(const Eigen::MatrixXf& X)
+    : lu(X.unaryExpr([] (const float& f) { return LogValD((double) f, false); }))
+    { }
 
     float logdet() {
-        return lu.determinant().logabs();
+        return (float) lu.determinant().logabs();
     }
 
     auto inv() {
-        Eigen::MatrixXlogd Xinv = lu.inverse(); return from_log<float> (Xinv);
+        Eigen::MatrixXlogd Xinv = lu.inverse();
+        Eigen::MatrixXf Xinvf = Xinv.unaryExpr([](const LogValD& lv) { return (float) lv.as_float(); });
+        return Xinvf;
     }
 
 private:
@@ -74,7 +67,7 @@ public:
         auto res_acc = res.mutable_unchecked<1>();
 
         for (int k = 0; k < batch_size; ++k) {
-            res_acc(k) = lus[k].determinant().logabs();
+            res_acc(k) = (float) lus[k].determinant().logabs();
         }
 
         return res;
@@ -93,7 +86,7 @@ public:
             Eigen::MatrixXlogd Xinv = lus[k].inverse();
             for (int i = 0; i < dk; ++i) {
                 for (int j = 0; j < dk; ++j) {
-                    res_acc(k, i, j) = Xinv(i, j).as_float();
+                    res_acc(k, i, j) = (float) Xinv(i, j).as_float();
                 }
             }
         }
@@ -117,7 +110,8 @@ PYBIND11_MODULE(lu, m) {
         .def("logdet",
              &log_domain_lu::logdet)
         .def("inv",
-             &log_domain_lu::inv);
+             &log_domain_lu::inv,
+             py::return_value_policy::move);
 
     py::class_<batch_log_domain_lu>(m, "BatchLogDomainLU")
         .def(py::init<py::array_t<float>, std::vector<int>>())
