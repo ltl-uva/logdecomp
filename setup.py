@@ -71,7 +71,7 @@ setup(name='logdecomp',
       version=__version__,
       author="Vlad Niculae",
       ext_modules=extensions,
-      install_requires=["torch>=1.9.0", "numpy"],
+      install_requires=["torch>=1.8.1", "numpy"],
       packages=['logdecomp'],
       setup_requires=['pybind11>=2.5.0'],
       zip_safe=False

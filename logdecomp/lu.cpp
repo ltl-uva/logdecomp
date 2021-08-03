@@ -18,13 +18,14 @@ namespace Eigen {
 
 
 Eigen::MatrixXlogd to_log(const Eigen::MatrixXf& X) {
-    Eigen::MatrixXlogd res(X.rows(), X.cols());
-    for (py::ssize_t i = 0; i < X.rows(); ++i) {
-        for (py::ssize_t j = 0; j < X.cols(); ++j) {
-            res(i, j) = LogValD((double) X(i, j), false);
-        }
-    }
-    return res;
+    return X.unaryExpr([](float f) { return LogValD((double) f, false); });
+    //Eigen::MatrixXlogd res(X.rows(), X.cols());
+    //for (py::ssize_t i = 0; i < X.rows(); ++i) {
+        //for (py::ssize_t j = 0; j < X.cols(); ++j) {
+            //res(i, j) = LogValD((double) X(i, j), false);
+        //}
+    //}
+    //return res;
 }
 
 class log_domain_lu { public:
