@@ -1,5 +1,5 @@
 [project]
-requires-pytyhon = ">=3.6"
+requires-python = ">=3.6"
 
 [build-system]
 requires = ["pip", "setuptools>=42", "wheel", "torch>=1.9.0"]
