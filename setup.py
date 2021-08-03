@@ -5,7 +5,7 @@ from setuptools import setup
 import sys
 import setuptools
 
-from pybind11.setup_helpers import Pybind11Extension
+from pybind11.setup_helpers import Pybind11Extension, build_ext
 
 
 __version__ = '0.1'
@@ -58,7 +58,6 @@ extensions = [
     Pybind11Extension('logdecomp.lu',
                       ["logdecomp/lu.cpp"],
                       include_dirs=[find_eigen()],
-                      extra_compile_args=['-std=c++17'],
     )
 ]
 
@@ -67,6 +66,8 @@ setup(name='logdecomp',
       version=__version__,
       author="Vlad Niculae",
       ext_modules=extensions,
+      install_requires=["torch>=1.9.0", "numpy"],
+      cmdclass={"build_ext": build_ext},
       packages=['logdecomp'],
       setup_requires=['pybind11>=2.5.0'],
       zip_safe=False
