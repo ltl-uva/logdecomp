@@ -31,7 +31,8 @@ Eigen::MatrixXlogd to_log(const Eigen::MatrixXf& X) {
     return res;
 }
 
-class log_domain_lu { public:
+class log_domain_lu {
+public:
     log_domain_lu(const Eigen::MatrixXf& X): lu(to_log(X)) { }
 
     float logdet() {
@@ -89,10 +90,23 @@ public:
         for (py::ssize_t k = 0; k < batch_size; ++k) {
 
             auto dk = lengths[k];
+
+            // pass 1. extract min
+            float xkmax = X_acc(k, 0, 0);
+            for (py::ssize_t i = 0; i < dk; ++i) {
+                for (py::ssize_t j = 0; j < dk; ++j) {
+                    xkmax = static_cast<double>(std::max(xkmax, X_acc(k, i, j)));
+                }
+            }
+
+            xmax.push_back(xkmax);
+
             Eigen::MatrixXlogd Xk(dk, dk);
             for (py::ssize_t i = 0; i < dk; ++i) {
                 for (py::ssize_t j = 0; j < dk; ++j) {
-                    Xk(i, j) = LogValD((double) X_acc(k, i, j), _sign(k, i, j));
+                    // upcast to avoid underflow
+                    auto val = static_cast<double>(X_acc(k, i, j)) - xkmax;
+                    Xk(i, j) = LogValD(val, _sign(k, i, j));
                 }
             }
             lus.emplace_back(Xk);
@@ -104,7 +118,8 @@ public:
         auto res_acc = res.mutable_unchecked<1>();
 
         for (py::ssize_t k = 0; k < batch_size; ++k) {
-            res_acc(k) = (float) lus[k].determinant().logabs();
+            double val = lus[k].determinant().logabs() + lengths[k] * xmax[k];
+            res_acc(k) = static_cast<float>(val);
         }
 
         return res;
@@ -120,12 +135,13 @@ public:
         auto res_acc = res.mutable_unchecked<3>();
         for (int k = 0; k < batch_size; ++k) {
             auto dk = lengths[k];
+            LogValD exp_xkmax(xmax[k], false);
             Eigen::MatrixXlogd Xinv = lus[k].inverse();
-            auto Xinvf = Xinv.cast<double>();
             for (int i = 0; i < dk; ++i) {
                 for (int j = 0; j < dk; ++j) {
-                    double x = Xinvf(i, j);
-                    res_acc(k, i, j) = (float) x;
+                    LogValD exp_uij = Xinv(i, j);
+                    exp_uij /= exp_xkmax;
+                    res_acc(k, i, j) = static_cast<float>(exp_uij.as_float());
                 }
             }
         }
@@ -136,6 +152,7 @@ public:
 private:
     std::vector<Eigen::FullPivLU<Eigen::MatrixXlogd>> lus;
     std::vector<int> lengths;
+    std::vector<float> xmax;
     py::ssize_t batch_size;
     py::ssize_t dim1;
     py::ssize_t dim2;

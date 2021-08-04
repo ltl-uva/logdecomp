@@ -29,8 +29,9 @@ def logz_and_marginals_mtt(X, lengths):
 
     X = X + mask
 
-    Xmax = X.max(dim=-1)[0].max(dim=-1)[0]
-    X = X - Xmax.unsqueeze(-1).unsqueeze(-1)
+    # this magic is now done in c++
+    # Xmax = X.max(dim=-1)[0].max(dim=-1)[0]
+    # X = X - Xmax.unsqueeze(-1).unsqueeze(-1)
 
     eye = torch.eye(N, device=X.device)
     log_lap = X.masked_fill(eye != 0, NINF)
@@ -47,7 +48,7 @@ def logz_and_marginals_mtt(X, lengths):
     sign = ~sign
 
     logdet, inv = logdet_and_inv_exp(log_lap, lengths, sign)
-    logdet += lengths_t.squeeze() * Xmax
+    # logdet += lengths_t.squeeze() * Xmax
 
     factor = (
         torch.diagonal(inv, 0, -2, -1)

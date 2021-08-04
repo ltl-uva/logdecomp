@@ -120,14 +120,14 @@ def test_batch_invexp_sign():
     sign = True
 
     inv_expected = A_neg.double().inverse()
-    inv_obtained = invexp(X, lengths, sign)
+    inv_obtained = invexp(X, lengths, sign).double()
     assert torch.allclose(inv_expected, inv_obtained)
 
     # test 3d sign (taken from A)
     sign = A < 0
     X = torch.log(torch.abs(A))
     inv_expected = A.double().inverse()
-    inv_obtained = invexp(X, lengths, sign)
+    inv_obtained = invexp(X, lengths, sign).double()
     assert torch.allclose(inv_expected, inv_obtained)
 
     # test 2d sign
@@ -136,7 +136,8 @@ def test_batch_invexp_sign():
     A_same_sign[:, sign] *= -1
 
     inv_expected = A_same_sign.double().inverse()
-    inv_obtained = invexp(X, lengths, sign)  # same X as above, but diff. signs
+    # same X as above, but diff. signs
+    inv_obtained = invexp(X, lengths, sign).double()
     assert torch.allclose(inv_expected, inv_obtained)
 
 
