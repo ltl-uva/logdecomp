@@ -104,3 +104,39 @@ def test_batch_invexp_backward():
 
     # this is numerically sketchier. Fails for many seeds.
     assert torch.allclose(grad_expected, grad_obtained)
+
+
+def test_batch_invexp_sign():
+
+    # test is a bit numerically unstable but seems correct
+
+    b, d = 2, 5
+    A = torch.randn(b, d, d)
+    lengths = [d] * b
+
+    # test 1d sign
+    A_neg = -torch.abs(A)
+    X = torch.log(-A_neg)
+    sign = True
+
+    inv_expected = A_neg.inverse()
+    inv_obtained = invexp(X, lengths, sign)
+    assert torch.allclose(inv_expected, inv_obtained)
+
+    # test 3d sign (taken from A)
+    sign = A < 0
+    X = torch.log(torch.abs(A))
+    inv_expected = A.inverse()
+    inv_obtained = invexp(X, lengths, sign)
+    assert torch.allclose(inv_expected, inv_obtained)
+
+    # test 2d sign
+    sign = torch.randn(d, d) > 0
+    A_same_sign = torch.abs(A)
+    A_same_sign[:, sign] *= -1
+
+    inv_expected = A_same_sign.inverse()
+    inv_obtained = invexp(X, lengths, sign)  # same X as above, but diff. signs
+    assert torch.allclose(inv_expected, inv_obtained)
+
+

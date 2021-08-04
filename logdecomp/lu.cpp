@@ -3,6 +3,8 @@
 #include <pybind11/eigen.h>
 #include <pybind11/numpy.h>
 
+#include <functional>
+
 #include <Eigen/Dense>
 
 #include "logval.h"
@@ -14,8 +16,8 @@ typedef LogVal<double> LogValD;
 namespace Eigen {
     typedef Eigen::Matrix<LogValD, Dynamic, Dynamic> MatrixXlogd;
     typedef Eigen::Matrix<float, Dynamic, Dynamic> MatrixXf;
-}
 
+}
 
 Eigen::MatrixXlogd to_log(const Eigen::MatrixXf& X) {
     // the one-liner unaryExpr fails on windows. Maybe for good reason?
@@ -51,21 +53,46 @@ class batch_log_domain_lu {
 public:
     batch_log_domain_lu(
         const py::array_t<float>& X,
-        const std::vector<int>& lengths)
+        const std::vector<int>& lengths,
+        const py::array_t<bool>& sign)
     : lengths{ lengths }
     {
         auto X_acc = X.unchecked<3>();
+
+        // there are three possibilities for the sign:
+        // ndim=0 means sign is the same everywhere.
+        // ndim=2 means sign at k,i,j is sign(i,j)
+        // ndim=3 means sign at k,i,j is sign(k,i,j)
+        // Dynamically design a sign extraction function for ecah case.
+
+        std::function<bool (py::ssize_t, py::ssize_t, py::ssize_t)> _sign;
+        auto sign_buf = sign.request();
+
+        if (sign_buf.ndim == 0) {
+            auto sign_val = static_cast<bool*>(sign_buf.ptr)[0];
+            _sign = [sign_val](py::ssize_t k, py::ssize_t i, py::ssize_t j) { return sign_val; };
+        } else if (sign_buf.ndim == 2) {
+            auto sign_2d = sign.unchecked<2>();
+            _sign = [&sign_2d](py::ssize_t k, py::ssize_t i, py::ssize_t j) { return sign_2d(i, j); };
+        } else if (sign_buf.ndim == 3) {
+            auto sign_3d = sign.unchecked<3>();
+            _sign = [&sign_3d](py::ssize_t k, py::ssize_t i, py::ssize_t j) { return sign_3d(k, i, j); };
+        } else {
+            std::runtime_error("wrong dimension");
+        }
 
         batch_size = X_acc.shape(0);
         dim1 = X_acc.shape(1);
         dim2 = X_acc.shape(2);
 
+
         for (py::ssize_t k = 0; k < batch_size; ++k) {
+
             auto dk = lengths[k];
             Eigen::MatrixXlogd Xk(dk, dk);
             for (py::ssize_t i = 0; i < dk; ++i) {
                 for (py::ssize_t j = 0; j < dk; ++j) {
-                    Xk(i, j) = LogValD((double) X_acc(k, i, j), false);
+                    Xk(i, j) = LogValD((double) X_acc(k, i, j), _sign(k, i, j));
                 }
             }
             lus.emplace_back(Xk);
@@ -118,7 +145,8 @@ private:
 PYBIND11_MODULE(lu, m) {
 
     py::class_<log_domain_lu>(m, "LogDomainLU")
-        .def(py::init<const Eigen::MatrixXf&>())
+        .def(py::init<const Eigen::MatrixXf&>(),
+             py::arg().noconvert().none(false))
         .def("logdet",
              &log_domain_lu::logdet)
         .def("inv",
@@ -126,7 +154,10 @@ PYBIND11_MODULE(lu, m) {
              py::return_value_policy::move);
 
     py::class_<batch_log_domain_lu>(m, "BatchLogDomainLU")
-        .def(py::init<py::array_t<float>, std::vector<int>>())
+        .def(py::init<py::array_t<float>,
+                      std::vector<int>,
+                      py::array_t<bool>>(),
+             py::arg().noconvert(), py::arg().noconvert(), py::arg().noconvert())
         .def("logdet",
              &batch_log_domain_lu::logdet,
              py::return_value_policy::move)
