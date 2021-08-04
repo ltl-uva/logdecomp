@@ -73,10 +73,10 @@ public:
             _sign = [sign_val](py::ssize_t k, py::ssize_t i, py::ssize_t j) { return sign_val; };
         } else if (sign_buf.ndim == 2) {
             auto sign_2d = sign.unchecked<2>();
-            _sign = [&sign_2d](py::ssize_t k, py::ssize_t i, py::ssize_t j) { return sign_2d(i, j); };
+            _sign = [sign_2d](py::ssize_t k, py::ssize_t i, py::ssize_t j) { return sign_2d(i, j); };
         } else if (sign_buf.ndim == 3) {
             auto sign_3d = sign.unchecked<3>();
-            _sign = [&sign_3d](py::ssize_t k, py::ssize_t i, py::ssize_t j) { return sign_3d(k, i, j); };
+            _sign = [sign_3d](py::ssize_t k, py::ssize_t i, py::ssize_t j) { return sign_3d(k, i, j); };
         } else {
             std::runtime_error("wrong dimension");
         }
