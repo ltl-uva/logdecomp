@@ -1,11 +1,6 @@
 name: Build
 
-on:
-  push:
-    branches:
-      - main
-      - build
-
+on: [push, pull_request, release]
 
 jobs:
     build_win_wheels:
