@@ -119,7 +119,7 @@ def test_batch_invexp_sign():
     X = torch.log(-A_neg)
     sign = True
 
-    inv_expected = A_neg.double()inverse()
+    inv_expected = A_neg.double().inverse()
     inv_obtained = invexp(X, lengths, sign)
     assert torch.allclose(inv_expected, inv_obtained)
 
