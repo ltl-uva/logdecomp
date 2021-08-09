@@ -8,7 +8,7 @@ import setuptools
 from pybind11.setup_helpers import Pybind11Extension, WIN
 
 
-__version__ = '0.3.dev0'
+__version__ = '0.2'
 
 
 # thanks to https://github.com/dfm/transit/blob/master/setup.py
