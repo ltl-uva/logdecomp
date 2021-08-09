@@ -118,6 +118,8 @@ class BatchLogDetAndInvExp(torch.autograd.Function):
 
         expX = _apply_sign(torch.exp(X), sign)
 
+        dl_dlogdet = dl_dlogdet.unsqueeze(-1).unsqueeze(-1)
+
         d_via_logdet = Yt * expX * dl_dlogdet
         d_via_Y =  (-Yt @ dl_dY @ Yt) * expX
 
