@@ -196,7 +196,7 @@ def invexp(X, lengths=None, sign=False):
         raise ValueError("X.shape must be [d, d] or [b, d, d].")
 
 
-def logdet_and_inv_exp(X, lengths, sign):
+def logdet_and_inv_exp(X, lengths, sign=False):
     """Stable computation of log|S*exp(X)| and (S*exp(X))^-1 (exp elementwise).
 
     Uses Eigen LU decomposition with full pivoting on top of a custom
@@ -218,4 +218,6 @@ def logdet_and_inv_exp(X, lengths, sign):
         value -exp(A[k, i, j]) at that position, rather than +exp.
         Only supported in batch mode.
     """
+    if X.ndim == 2:
+        raise NotImplementedError("Only batch mode supported currently.")
     return BatchLogDetAndInvExp.apply(X, lengths, sign)

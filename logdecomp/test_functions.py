@@ -1,7 +1,7 @@
 import torch
 import pytest
 
-from logdecomp import logdetexp, invexp
+from logdecomp import logdetexp, invexp, logdet_and_inv_exp
 
 
 # initialize seed in all tests
@@ -141,3 +141,29 @@ def test_batch_invexp_sign():
     assert torch.allclose(inv_expected, inv_obtained)
 
 
+def test_batch_logdet_and_invexp():
+    b, d = 2, 5
+    X = torch.randn(b, d, d, requires_grad=True)
+    lengths = torch.randint(2, d, (b,))
+    dloss_det = torch.randn(b)
+    dloss_inv = torch.randn(b, d, d)
+
+    logdet_expected = logdetexp(X, lengths)
+    inv_expected = invexp(X, lengths)
+
+    logdet_obtained, inv_obtained = logdet_and_inv_exp(X, lengths)
+
+    assert torch.allclose(logdet_expected, logdet_obtained)
+    assert torch.allclose(inv_expected, inv_obtained)
+
+    det_grad_expected, = torch.autograd.grad(logdet_expected, X, dloss_det,
+                                             retain_graph=True)
+    det_grad_obtained, = torch.autograd.grad(logdet_obtained, X, dloss_det,
+                                             retain_graph=True)
+
+    assert torch.allclose(det_grad_expected, det_grad_obtained)
+
+    inv_grad_expected, = torch.autograd.grad(inv_expected, X, dloss_inv)
+    inv_grad_obtained, = torch.autograd.grad(inv_obtained, X, dloss_inv)
+
+    assert torch.allclose(inv_grad_expected, inv_grad_obtained)
