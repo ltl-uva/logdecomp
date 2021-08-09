@@ -70,6 +70,8 @@ extensions = [
 setup(name='logdecomp',
       version=__version__,
       author="Vlad Niculae",
+      author_email="vlad@vene.ro",
+      url="https://github.com/ltl-uva/logdecomp/",
       ext_modules=extensions,
       install_requires=["torch>=1.8.1", "numpy"],
       packages=['logdecomp'],

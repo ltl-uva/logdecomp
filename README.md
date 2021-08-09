@@ -5,6 +5,8 @@
 Library for computing `inv(A)` (matrix inverse) and `log(abs(det(A)))` (signed log-determinant)
 and their gradients, for matrices `X` of the form `a_ii = s_ij * exp(x_ij)`.
 
+By Vlad Niculae `@vene` // licensed under BSD 2-clause.
+
 ## Usage example
 
 ```python
