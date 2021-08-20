@@ -53,7 +53,7 @@ private:
 class batch_log_domain_lu {
 public:
     batch_log_domain_lu(
-        const py::array_t<float>& X,
+        const py::array_t<double>& X,
         const std::vector<int>& lengths,
         const py::array_t<bool>& sign)
     : lengths{ lengths }
@@ -92,7 +92,7 @@ public:
             auto dk = lengths[k];
 
             // pass 1. extract min
-            float xkmax = X_acc(k, 0, 0);
+            double xkmax = X_acc(k, 0, 0);
             for (py::ssize_t i = 0; i < dk; ++i) {
                 for (py::ssize_t j = 0; j < dk; ++j) {
                     xkmax = static_cast<double>(std::max(xkmax, X_acc(k, i, j)));
@@ -113,23 +113,23 @@ public:
         }
     }
 
-    py::array_t<float> logdet() {
-        auto res = py::array_t<float>({ batch_size });
+    py::array_t<double> logdet() {
+        auto res = py::array_t<double>({ batch_size });
         auto res_acc = res.mutable_unchecked<1>();
 
         for (py::ssize_t k = 0; k < batch_size; ++k) {
             double val = lus[k].determinant().logabs() + lengths[k] * xmax[k];
-            res_acc(k) = static_cast<float>(val);
+            res_acc(k) = static_cast<double>(val);
         }
 
         return res;
     }
 
-    py::array_t<float> inv(bool zero_pad) {
-        auto res = py::array_t<float>({ batch_size, dim1, dim2 });
+    py::array_t<double> inv(bool zero_pad) {
+        auto res = py::array_t<double>({ batch_size, dim1, dim2 });
 
         if (zero_pad) {
-            std::fill(res.mutable_data(), res.mutable_data() + res.size(), float{});
+            std::fill(res.mutable_data(), res.mutable_data() + res.size(), double{});
         }
 
         auto res_acc = res.mutable_unchecked<3>();
@@ -141,7 +141,7 @@ public:
                 for (int j = 0; j < dk; ++j) {
                     LogValD exp_uij = Xinv(i, j);
                     exp_uij /= exp_xkmax;
-                    res_acc(k, i, j) = static_cast<float>(exp_uij.as_float());
+                    res_acc(k, i, j) = static_cast<double>(exp_uij.as_float());
                 }
             }
         }
@@ -171,7 +171,7 @@ PYBIND11_MODULE(lu, m) {
              py::return_value_policy::move);
 
     py::class_<batch_log_domain_lu>(m, "BatchLogDomainLU")
-        .def(py::init<py::array_t<float>,
+        .def(py::init<py::array_t<double>,
                       std::vector<int>,
                       py::array_t<bool>>(),
              py::arg().noconvert(), py::arg().noconvert(), py::arg().noconvert())
